@@ -8,7 +8,7 @@ public class FileClient{
 	
 	private static final String HOSTNAME = "127.0.0.1";
 	private static final int PORT = 30000;
-	private static final String FILENAME = "/home/dell/msg1_client.txt";
+	private static final String FILENAME = "E://server//upload.txt";
 	
 	public static void main(String [] args) {
 		
@@ -31,8 +31,8 @@ public class FileClient{
 				OutputStream os = socket.getOutputStream();
 				InputStream is = socket.getInputStream();
 				DataOutputStream dos = new DataOutputStream(os);
-				//FileInputStream fis = new FileInputStream(clientUploadFile);
-				//BufferedInputStream bis = new BufferedInputStream(fis);
+				FileInputStream fis = new FileInputStream(clientDownloadFile);
+				BufferedInputStream bis = new BufferedInputStream(fis);
 				DataInputStream dis = new DataInputStream(is);
 				FileOutputStream fos = new FileOutputStream(clientDownloadFile);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -61,7 +61,7 @@ public class FileClient{
 			// Get certificate from server
 			try {
 				
-				FileOutputStream certFos = new FileOutputStream("/home/dell/server_cert.crt");
+				FileOutputStream certFos = new FileOutputStream("CA-certificate.crt");
 				BufferedOutputStream certBos = new BufferedOutputStream(certFos);
 				byte[] fileByte = new byte[64];
 				int bytesRead = 0;
@@ -72,9 +72,9 @@ public class FileClient{
 	    			}
 				}
 				certBos.close();
-				FileInputStream fis = new FileInputStream("/home/dell/server_cert.crt");
+				FileInputStream fisserver = new FileInputStream("CA-certificate.crt");
 				CertificateFactory cf = CertificateFactory.getInstance("X509");
-				X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
+				X509Certificate c = (X509Certificate) cf.generateCertificate(fisserver);
 				AuthenticateServer.authServer(c);
 
 			} catch (CertificateException e) {
