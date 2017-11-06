@@ -38,8 +38,6 @@ public class AuthenticateServer {
 			//Verifying the certificate by comparing to Server's public key
 			cert.verify(serverPK);
 			
-		}catch(Exception e) {
-			e.printStackTrace();
 		}
 		catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -48,6 +46,18 @@ public class AuthenticateServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CertificateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SignatureException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
