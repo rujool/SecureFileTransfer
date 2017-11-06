@@ -1,7 +1,5 @@
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
@@ -20,12 +18,21 @@ import java.util.Base64;
 public class AuthenticateServer {
 	public static void authServer(X509Certificate cert) {
 		try {
-			FileInputStream keyfis = new FileInputStream("/home/dell/ashkan-public.key");
-			String publicKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/ashkan-public.key")));
+			//Server's public key loaded from the file
+			FileInputStream keyfis = new FileInputStream("serverpubkey");
+			String publicKeyStr = new String(Files.readAllBytes(Paths.get("serverpubkey")));
 			keyfis.close();
+			
+			//getting bytes from the server's public key string
+			byte[] data = Base64.getDecoder().decode(publicKeyStr.getBytes());
+			
+			//Generating key spec of the server's public key
+			X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
 			KeyFactory kf = KeyFactory.getInstance("RSA");
-			PublicKey pk = kf.generatePublic(spec);
-			cert.verify(pk);
+			PublicKey serverPK = kf.generatePublic(spec);
+			
+			//Verifying the certificate by comparing to Server's public key
+			cert.verify(serverPK);
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
