@@ -6,7 +6,9 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -15,9 +17,11 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+
 public class AuthenticateServer {
 	public static void authServer(X509Certificate cert) {
 		try {
+
 			//Server's public key loaded from the file
 			FileInputStream keyfis = new FileInputStream("serverpubkey");
 			String publicKeyStr = new String(Files.readAllBytes(Paths.get("serverpubkey")));
@@ -34,25 +38,16 @@ public class AuthenticateServer {
 			//Verifying the certificate by comparing to Server's public key
 			cert.verify(serverPK);
 			
-		} catch (IOException e) {
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchProviderException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
