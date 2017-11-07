@@ -19,13 +19,11 @@ import java.util.Base64;
 
 
 public class AuthenticateServer {
-	public static void authServer(X509Certificate cert) {
+	public static PublicKey authServer(X509Certificate cert) throws Exception{
 		try {
 
 			//Server's public key loaded from the file
-			FileInputStream keyfis = new FileInputStream("serverpubkey");
 			String publicKeyStr = new String(Files.readAllBytes(Paths.get("serverpubkey")));
-			keyfis.close();
 			
 			//getting bytes from the server's public key string
 			byte[] data = Base64.getDecoder().decode(publicKeyStr.getBytes());
@@ -37,30 +35,10 @@ public class AuthenticateServer {
 			
 			//Verifying the certificate by comparing to Server's public key
 			cert.verify(serverPK);
-			
+			return serverPK;
 		}
-		catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchProviderException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
-		
+		catch(Exception e) {
+			throw e;
+		}
 	}
 }
