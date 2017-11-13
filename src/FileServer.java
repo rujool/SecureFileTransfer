@@ -5,7 +5,7 @@ public class FileServer {
 	private static final int PORT = 30000;
 	private static final String FILENAME = "/home/dell/nmap_results.txt";
 	private static final String UPLOAD_FILENAME = "/home/dell/msg1_client.txt";
-	private static final String SERVER_CERT_PATH = "/home/dell/server_cert.crt";
+	private static final String SERVER_CERT_PATH = "/home/dell/CA-certificate.crt";
 	
     public static void main(String[] args) throws IOException {
     	ServerSocket socket = new ServerSocket(PORT);

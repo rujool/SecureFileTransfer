@@ -72,7 +72,7 @@ public class FileClient{
 			// Get certificate from server
 			try {
 				
-				FileOutputStream certFos = new FileOutputStream("/home/dell/CA-certificate.crt");
+				FileOutputStream certFos = new FileOutputStream("/home/dell/server_cert.crt");
 				BufferedOutputStream certBos = new BufferedOutputStream(certFos);
 				byte[] fileByte = new byte[64];
 				int bytesRead = 0;
@@ -87,7 +87,7 @@ public class FileClient{
 				CertificateFactory cf = CertificateFactory.getInstance("X509");
 				X509Certificate c = (X509Certificate) cf.generateCertificate(fisserver);
 				PublicKey serverPubKey = AuthenticateServer.authServer(c);
-				
+				//System.out.println("Server public key: "+Base64.getEncoder().encode(new String(serverPubKey).getBytes()));
 				// Generate and Encrypt Random Nonce
 				long randomNonce = FileTransferProtocol.generateRandomNonce();
 				ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
@@ -98,12 +98,8 @@ public class FileClient{
 				
 				// Decryption with private key
 				//String privateKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/server-private.key")));
-				FileInputStream keyFis = new FileInputStream("/home/dell/server-private.key");
-				byte[] keyBytes = new byte[keyFis.available()];
-				keyFis.read(keyBytes);
-				keyFis.close();
-				String privateKeyStr = new String(keyBytes);
-				privateKeyStr = privateKeyStr.replace("-----BEGIN RSA PRIVATE KEY-----\n", "").replace("-----END RSA PRIVATE KEY-----","");
+				String privateKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/server_privatekey"))).trim();
+				privateKeyStr = privateKeyStr.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("-----END PRIVATE KEY-----","").trim();
 				System.out.println(privateKeyStr);
 				
 				/*privateKeyStr = "MIIEpAIBAAKCAQEAzGR56LvGNRH5vhtjx9EdRWVNcYQtbvdk6VnyAhChCB1yquDH"
@@ -132,8 +128,8 @@ public class FileClient{
 						+ "VQYELCJIl2jgymwV1fmQOCUbOmN0lnw5vuD7a8fDsJyVQRJyZ8kg5Gsn6r5Qx92H"
 						+ "JBPUS6d2lnLe/dgiXimCH8KETMNobOcNTEYWxR+JrrAIl8udqfdvmg==";
 				*/
-				//Generating key spec of the server's public key
-				PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(privateKeyStr.getBytes());
+				//Generating key spec of the server's private key
+				PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyStr));
 				KeyFactory kf = KeyFactory.getInstance("RSA");
 				PrivateKey serverPrivateKey = kf.generatePrivate(spec);
 				
@@ -143,8 +139,8 @@ public class FileClient{
 				buffer = ByteBuffer.allocate(Long.BYTES);
 				buffer.put(decrypted);
 				buffer.flip();
-				System.out.println("Decrypted: "+buffer.getLong());
-
+				//System.out.println("Decrypted: "+buffer.getLong());
+			
 			} catch (CertificateException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
