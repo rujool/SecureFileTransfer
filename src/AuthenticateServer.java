@@ -19,7 +19,7 @@ import java.util.Base64;
 
 
 public class AuthenticateServer {
-	public static PublicKey authServer(X509Certificate cert) throws Exception{
+	public static void authServer(X509Certificate cert) throws Exception{
 		try {
 
 			//CA's public key loaded from the file
@@ -33,18 +33,17 @@ public class AuthenticateServer {
 					+ "QwIDAQAB";
 			//publicKeyStr = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzGR56LvGNRH5vhtjx9EdRWVNcYQtbvdk6VnyAhChCB1yquDHuoTaF2WxCf2B0DQLdq+OmOwUHr4EHv9zg+C/NJd1jwyNOZf4nE8qTDgIzDVjL9o20JnaJ/kEARjOIJAAEpcMSUrwbBnBwmsdXiGiFKSw7A8kFDCm5OIqe2bPe5GVMRjjn4/l/VWn5AZTRLF2SNzESslsKWnnX0Art9RMHItt/WsXXUAmQWZboZ73zhEST+K6LD1SjRlIOriUP/qyIInNS4VDXFtPDup4+KOZ3Hskh+bCKloGU4PWJzCSuiEOIan2u2lMB+i2pGxIHFRustcZrKA4hFbNYpifFGBQmQIDAQAB";
 			
-			//getting bytes from the server's public key string
+			//getting bytes from the CA's public key string
 			//System.out.println(publicKeyStr);
 			byte[] data = Base64.getDecoder().decode(publicKeyStr.getBytes());
 			
-			//Generating key spec of the server's public key
+			//Generating key spec of the CA's public key
 			X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
 			KeyFactory kf = KeyFactory.getInstance("RSA");
-			PublicKey serverPK = kf.generatePublic(spec);
+			PublicKey CApublicKey= kf.generatePublic(spec);
 			
-			//Verifying the certificate by comparing to Server's public key
-			cert.verify(serverPK);
-			return serverPK;
+			//Verifying the certificate by comparing to CA's public key
+			cert.verify(CApublicKey);
 		}
 		catch(Exception e) {
 			throw e;

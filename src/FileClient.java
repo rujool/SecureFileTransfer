@@ -86,15 +86,18 @@ public class FileClient{
 				FileInputStream fisserver = new FileInputStream("/home/dell/CA-certificate.crt");
 				CertificateFactory cf = CertificateFactory.getInstance("X509");
 				X509Certificate c = (X509Certificate) cf.generateCertificate(fisserver);
-				PublicKey serverPubKey = AuthenticateServer.authServer(c);
+				AuthenticateServer.authServer(c);
+				PublicKey serverPubKey = c.getPublicKey();
 				//System.out.println("Server public key: "+Base64.getEncoder().encode(new String(serverPubKey).getBytes()));
 				// Generate and Encrypt Random Nonce
-				long randomNonce = FileTransferProtocol.generateRandomNonce();
-				ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-				buffer.putLong(randomNonce);
+				
+//				ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+//				buffer.putLong(randomNonce);
+				//byte[] randomBytes = FileTransferProtocol.generateRandomNonce();
+				String plaintext = "Hello!";
 				Cipher cipher = Cipher.getInstance("RSA");
 				cipher.init(Cipher.ENCRYPT_MODE, serverPubKey);
-				byte[] encrypted = cipher.doFinal(buffer.array());
+				String encrypted = Base64.getEncoder().encodeToString(cipher.doFinal(plaintext.getBytes()));
 				
 				// Decryption with private key
 				//String privateKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/server-private.key")));
@@ -133,12 +136,15 @@ public class FileClient{
 				KeyFactory kf = KeyFactory.getInstance("RSA");
 				PrivateKey serverPrivateKey = kf.generatePrivate(spec);
 				
+				
 				//Decrypt random nonce
 				cipher.init(Cipher.DECRYPT_MODE, serverPrivateKey);
-				byte[] decrypted = cipher.doFinal(encrypted);
-				buffer = ByteBuffer.allocate(Long.BYTES);
-				buffer.put(decrypted);
-				buffer.flip();
+				//byte[] decrypted = cipher.doFinal(encrypted);
+				String decrypted = new String(cipher.doFinal(Base64.getDecoder().decode(encrypted)));
+//				buffer = ByteBuffer.allocate(Long.BYTES);
+//				buffer.put(decrypted);
+//				buffer.flip();
+				
 				//System.out.println("Decrypted: "+buffer.getLong());
 			
 			} catch (CertificateException e) {
