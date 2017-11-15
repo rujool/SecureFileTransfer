@@ -25,6 +25,7 @@ public class FileClient{
 	public static void main(String [] args) {
 		
 		File clientDownloadFile = new File(FILENAME);
+		FileTransferProtocol protocol = new FileTransferProtocol();
 		/*if(args.length == 0) {
 			System.out.println(" Usage: java FileClient <-u | -d> <filename>"
 							+ " \n -u: Upload file"
@@ -50,71 +51,45 @@ public class FileClient{
 				BufferedOutputStream bos = new BufferedOutputStream(fos);
 		   )
 		{
-			// Client uploads to server
-			/*byte[] fileByte = new byte[64];
-			int bytesRead = 0;
-			while(bytesRead != -1) {
-				bytesRead = bis.read(fileByte, 0, fileByte.length);
-				if(bytesRead > 0)
-				{
-					dos.write(fileByte,0,bytesRead);
-				}
-			}*/
+			// Upload file to server
+			protocol.uploadFileToServer(socket,dos, FILENAME);
+			
+			
 			// Download from server
-			/*byte[] fileByte = new byte[64];
-			int bytesRead = 0;
-			while(bytesRead != -1) {
-    			bytesRead = dis.read(fileByte,0,fileByte.length);
-    			if(bytesRead > 0) {
-    				bos.write(fileByte,0,bytesRead);
-    			}
-			}*/
+			// protocol.downloadFileFromServer(socket, FILENAME);
 			
 			// Get certificate from server
 			try {
 				
-			/*	FileOutputStream certFos = new FileOutputStream("CA-certificate.crt");
-				BufferedOutputStream certBos = new BufferedOutputStream(certFos);
-				byte[] fileByte = new byte[64];
-				int bytesRead = 0;
-				while(bytesRead != -1) {
-	    			bytesRead = dis.read(fileByte,0,fileByte.length);
-	    			if(bytesRead > 0) {
-	    				certBos.write(fileByte,0,bytesRead);
-	    			}
-				}
-				certBos.close();*/
-				FileInputStream fisserver = new FileInputStream("server-certificate.crt");
-				CertificateFactory cf = CertificateFactory.getInstance("X509");
-				X509Certificate c = (X509Certificate) cf.generateCertificate(fisserver);
-				AuthenticateServer.authServer(c);
-				PublicKey serverPubKey = c.getPublicKey();
+				// Download CA certificate from server
+				protocol.downloadFileFromServer(socket,dis,"CA-certificate.crt");
 				
-				// Getting private key
-				//String privateKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/server-private.key")));
-				String privateKeyStr = new String(Files.readAllBytes(Paths.get("server_privatekey"))).trim();
-				privateKeyStr = privateKeyStr.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("-----END PRIVATE KEY-----","").trim();
-				//System.out.println("Private Key:" + privateKeyStr);
+				//Verify CA Certificate
+				X509Certificate c = protocol.serverVerified();
+				PublicKey serverPubKey = c.getPublicKey();
+				//System.out.println("Server public key: "+Base64.getEncoder().encode(new String(serverPubKey).getBytes()));
 				
 				//Generating key spec of the server's private key
+				String privateKeyStr = new String(Files.readAllBytes(Paths.get("server_privatekey"))).trim();
+ 				privateKeyStr = privateKeyStr.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("-----END PRIVATE KEY-----","").trim();
 				PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyStr));
 				KeyFactory kf = KeyFactory.getInstance("RSA");
 				PrivateKey serverPrivateKey = kf.generatePrivate(spec);
 				
 				//Encrypt the nonce
 				//String text = "This is the session key. It is encrypted using server's public key and will be decrypted by the server using its private key!";
-				long rand = FileTransferProtocol.generateRandomNonce();
+				long rand = protocol.generateRandomNonce();
 				Cipher ci = Cipher.getInstance("RSA");
 				ci.init(Cipher.ENCRYPT_MODE, serverPubKey);
 				System.out.println("The random nonce is: " + rand);
-				byte[] encrypted = ci.doFinal(FileTransferProtocol.longToBytes(rand));
+				byte[] encrypted = ci.doFinal(protocol.longToBytes(rand));
 				//System.err.println(new String(encrypted));
 				//System.out.println(new String(encrypted));
 				
 				//Decrypt the nonce
 				ci.init(Cipher.DECRYPT_MODE, serverPrivateKey);
-				String decrypted = new String(ci.doFinal(encrypted));
-				long ldecrypted = FileTransferProtocol.bytesToLong(decrypted.getBytes());
+				byte[] decrypted = ci.doFinal(encrypted);
+				long ldecrypted = protocol.bytesToLong(decrypted);
 				//System.err.println(decrypted);
 				System.out.println("The decrypted random nonce is: " + ldecrypted);
 				
