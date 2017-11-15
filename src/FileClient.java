@@ -12,6 +12,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Random;
 
 import javax.crypto.Cipher;
 
@@ -19,7 +20,7 @@ public class FileClient{
 	
 	private static final String HOSTNAME = "127.0.0.1";
 	private static final int PORT = 30000;
-	private static final String FILENAME = "/home/dell/msg1_client.txt";
+	private static final String FILENAME = "test.txt";
 	
 	public static void main(String [] args) {
 		
@@ -72,7 +73,7 @@ public class FileClient{
 			// Get certificate from server
 			try {
 				
-				FileOutputStream certFos = new FileOutputStream("/home/dell/server_cert.crt");
+			/*	FileOutputStream certFos = new FileOutputStream("CA-certificate.crt");
 				BufferedOutputStream certBos = new BufferedOutputStream(certFos);
 				byte[] fileByte = new byte[64];
 				int bytesRead = 0;
@@ -82,71 +83,41 @@ public class FileClient{
 	    				certBos.write(fileByte,0,bytesRead);
 	    			}
 				}
-				certBos.close();
-				FileInputStream fisserver = new FileInputStream("/home/dell/CA-certificate.crt");
+				certBos.close();*/
+				FileInputStream fisserver = new FileInputStream("server-certificate.crt");
 				CertificateFactory cf = CertificateFactory.getInstance("X509");
 				X509Certificate c = (X509Certificate) cf.generateCertificate(fisserver);
 				AuthenticateServer.authServer(c);
 				PublicKey serverPubKey = c.getPublicKey();
-				//System.out.println("Server public key: "+Base64.getEncoder().encode(new String(serverPubKey).getBytes()));
-				// Generate and Encrypt Random Nonce
 				
-//				ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-//				buffer.putLong(randomNonce);
-				//byte[] randomBytes = FileTransferProtocol.generateRandomNonce();
-				String plaintext = "Hello!";
-				Cipher cipher = Cipher.getInstance("RSA");
-				cipher.init(Cipher.ENCRYPT_MODE, serverPubKey);
-				String encrypted = Base64.getEncoder().encodeToString(cipher.doFinal(plaintext.getBytes()));
-				
-				// Decryption with private key
+				// Getting private key
 				//String privateKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/server-private.key")));
-				String privateKeyStr = new String(Files.readAllBytes(Paths.get("/home/dell/server_privatekey"))).trim();
+				String privateKeyStr = new String(Files.readAllBytes(Paths.get("server_privatekey"))).trim();
 				privateKeyStr = privateKeyStr.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("-----END PRIVATE KEY-----","").trim();
-				System.out.println(privateKeyStr);
+				//System.out.println("Private Key:" + privateKeyStr);
 				
-				/*privateKeyStr = "MIIEpAIBAAKCAQEAzGR56LvGNRH5vhtjx9EdRWVNcYQtbvdk6VnyAhChCB1yquDH"
-						+ "uoTaF2WxCf2B0DQLdq+OmOwUHr4EHv9zg+C/NJd1jwyNOZf4nE8qTDgIzDVjL9o2"
-						+ "0JnaJ/kEARjOIJAAEpcMSUrwbBnBwmsdXiGiFKSw7A8kFDCm5OIqe2bPe5GVMRjj"
-						+ "n4/l/VWn5AZTRLF2SNzESslsKWnnX0Art9RMHItt/WsXXUAmQWZboZ73zhEST+K6"
-						+ "LD1SjRlIOriUP/qyIInNS4VDXFtPDup4+KOZ3Hskh+bCKloGU4PWJzCSuiEOIan2"
-						+ "u2lMB+i2pGxIHFRustcZrKA4hFbNYpifFGBQmQIDAQABAoIBABUh7ljZ0Ux7Z074"
-						+ "lgB65oPeTXuHJwtqGMznt9Xu0jd8k/aG9x+ZzNLOeNeHlnxoZScIT74P6qSjENoD"
-						+ "n3XrLtnJLyZzLcbep53BsaXfxUkX3AF+llxLC/tGC9vxLJ7BRMCnTWXmkaUbpKTt"
-						+ "XkP1RkTMIl7F0f0kap0PpUTNBHbKD012qqAv8pDia9OLWp+CJWHngiW9euzKs2eE"
-						+ "fIHCKfX/AThhypAogrTgqqzB0ohiXJGAHSO5kkVUSpVJCLzNYj01fUQlqbyCZgtU"
-						+ "CX5yOADuKNXdOzITLNg/VwWgEP9we7y4kJXfdNfrfL4yP+biisZGwruE9+5/+5YW"
-						+ "rOSyoYECgYEA5gN4KL9ckOr/LFrFe8MEx2xoBPBimylL/zExhNq4vdA8y60N+15V"
-						+ "HGTN0X52fWkKynLkurBf3TTRDF58wA28jrJYGoZAQ4xlIcaAyDvg6IF2l/HcKTfz"
-						+ "tHuyIHLLoH8cOhJvdX8l9ptuflig92UL66385yvtTqBf5+HXKxpW4L0CgYEA43v8"
-						+ "TmntG50uaJJZ/0tkkHvbDgpSPR4g7AZ3ri8Q1jnVdtBmq3zWYLRFIytzdhRxY9Ny"
-						+ "HFqqwdqacoG58GL5kL6Z4PO0TgLib0H8s10chIEreMnMS5lMq3rfVpzakiLIj9uv"
-						+ "RcCk2wnvAwmkGHSyiVXLpse8wd0EHcsFpbgqcw0CgYAhB5CCsXAWc1hvQx2mtwuB"
-						+ "o6SQSQCv7U83dxX4UPxEbZm9Wb1vQk2QhT00/yb+vU3KYpNL57XsawA1+X+KiK5y"
-						+ "A1Q5gtvJl2iSYBHwLwEOAkFIcne+B4XcfgLHPBTXmEkyYaFVywtljU5hoFKFFCKR"
-						+ "FmwBukIaj1cWUkz2qJKfNQKBgQCqzE6VuWZzU0Ki9S9pRPwOl0/TbOBuTw685+Y3"
-						+ "+9KSZf3mJXbQzvxOw0sdquQYBiVUpE+LBnAq+Kz5yHkJCecDTHhQs+nuoK/OhSbs"
-						+ "rL5apnkzSaCAKmusXKcPatmY21Dm4jTpFEkyxHSWPUjdq9DY2Hf9kv4gOId8rxBg"
-						+ "arREiQKBgQDjm8aiSHKaCFYuT5cTsMQwc3MSTLmPnN5W4uAwc4D4LIW66LcSgaXb"
-						+ "VQYELCJIl2jgymwV1fmQOCUbOmN0lnw5vuD7a8fDsJyVQRJyZ8kg5Gsn6r5Qx92H"
-						+ "JBPUS6d2lnLe/dgiXimCH8KETMNobOcNTEYWxR+JrrAIl8udqfdvmg==";
-				*/
 				//Generating key spec of the server's private key
 				PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyStr));
 				KeyFactory kf = KeyFactory.getInstance("RSA");
 				PrivateKey serverPrivateKey = kf.generatePrivate(spec);
 				
+				//Encrypt the nonce
+				//String text = "This is the session key. It is encrypted using server's public key and will be decrypted by the server using its private key!";
+				long rand = FileTransferProtocol.generateRandomNonce();
+				Cipher ci = Cipher.getInstance("RSA");
+				ci.init(Cipher.ENCRYPT_MODE, serverPubKey);
+				System.out.println("The random nonce is: " + rand);
+				byte[] encrypted = ci.doFinal(FileTransferProtocol.longToBytes(rand));
+				//System.err.println(new String(encrypted));
+				//System.out.println(new String(encrypted));
 				
-				//Decrypt random nonce
-				cipher.init(Cipher.DECRYPT_MODE, serverPrivateKey);
-				//byte[] decrypted = cipher.doFinal(encrypted);
-				String decrypted = new String(cipher.doFinal(Base64.getDecoder().decode(encrypted)));
-//				buffer = ByteBuffer.allocate(Long.BYTES);
-//				buffer.put(decrypted);
-//				buffer.flip();
+				//Decrypt the nonce
+				ci.init(Cipher.DECRYPT_MODE, serverPrivateKey);
+				String decrypted = new String(ci.doFinal(encrypted));
+				long ldecrypted = FileTransferProtocol.bytesToLong(decrypted.getBytes());
+				//System.err.println(decrypted);
+				System.out.println("The decrypted random nonce is: " + ldecrypted);
 				
-				//System.out.println("Decrypted: "+buffer.getLong());
-			
 			} catch (CertificateException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -161,4 +132,5 @@ public class FileClient{
 				e.printStackTrace();
 			}
 	}
+	
 }
