@@ -52,7 +52,7 @@ public class FileClient{
 		   )
 		{
 			// Upload file to server
-			protocol.uploadFileToServer(socket,dos, FILENAME);
+			//protocol.uploadFileToServer(socket,dos, FILENAME);
 			
 			
 			// Download from server
@@ -62,7 +62,7 @@ public class FileClient{
 			try {
 				
 				// Download CA certificate from server
-				protocol.downloadFileFromServer(socket,dis,"CA-certificate.crt");
+				protocol.downloadFileFromServer(socket,dis,"server_cert.crt");
 				
 				//Verify CA Certificate
 				X509Certificate c = protocol.serverVerified();
@@ -86,12 +86,15 @@ public class FileClient{
 				//System.err.println(new String(encrypted));
 				//System.out.println(new String(encrypted));
 				
+				dos.writeInt(1);
+				dos.flush();
 				//Decrypt the nonce
 				ci.init(Cipher.DECRYPT_MODE, serverPrivateKey);
 				byte[] decrypted = ci.doFinal(encrypted);
 				long ldecrypted = protocol.bytesToLong(decrypted);
 				//System.err.println(decrypted);
 				System.out.println("The decrypted random nonce is: " + ldecrypted);
+				dis.close();
 				
 			} catch (CertificateException e) {
 				// TODO Auto-generated catch block

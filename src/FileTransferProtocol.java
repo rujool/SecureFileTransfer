@@ -61,7 +61,7 @@ public class FileTransferProtocol {
 	
 	public X509Certificate serverVerified() throws Exception{
 					
-		FileInputStream fisserver = new FileInputStream("/home/dell/server_cert.crt");
+		FileInputStream fisserver = new FileInputStream("server_cert.crt");
 		CertificateFactory cf = CertificateFactory.getInstance("X509");
 		X509Certificate cert = (X509Certificate) cf.generateCertificate(fisserver);
 		
