@@ -105,9 +105,25 @@ public class FileClient extends JFrame {
 								try {
 									//send file name to server
 									dos.writeUTF(uploadFileName);
-									protocol.uploadFileToServer(socket, dos, uploadFileName);
+									protocol.uploadFileToServer(socket, dos, file);
+									
 								} catch (IOException ioe){
 									ioe.getStackTrace();
+								} catch (InvalidKeyException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								} catch (NoSuchPaddingException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								} catch (NoSuchAlgorithmException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								} catch (BadPaddingException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								} catch (IllegalBlockSizeException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
 								} 
 							} else {
 								System.out.println("No file selected by user." + "\n");
@@ -164,9 +180,15 @@ public class FileClient extends JFrame {
 		X509Certificate certificate = verifyCertificate();
 		//showMessage("hellooo");
 		PublicKey pk = getPublic(certificate);
-		byte[] encryptedNonce = protocol.encrypted(pk);
+		protocol.setServerPubKey(pk);
+		long randomNonce = protocol.generateRandomNonce();
+		protocol.setRandomNonce(randomNonce);
+		byte[] encryptedNonce = protocol.encrypted(randomNonce,pk);
 		dos.writeInt(encryptedNonce.length);
-		dos.write(encryptedNonce, 0, encryptedNonce.length);	
+		dos.write(encryptedNonce, 0, encryptedNonce.length);
+		long encryptionNonce = protocol.getEncryptionNonce(randomNonce);
+		byte[] encryptionKey = protocol.longToBytes(encryptionNonce);
+		protocol.setEncryptionKey(encryptionKey);
 	}
 
 	//connect to server

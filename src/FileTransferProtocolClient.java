@@ -3,6 +3,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -28,28 +29,71 @@ import javax.crypto.NoSuchPaddingException;
 
 public class FileTransferProtocolClient {
 	private static DataOutputStream dos;
+	private PublicKey serverPubKey;
+	private long randomNonce, IV;
+	private byte[] encryptionKey, integrityKey;
 	
+	public PublicKey getServerPubKey() {
+		return serverPubKey;
+	}
+
+	public void setServerPubKey(PublicKey serverPubKey) {
+		this.serverPubKey = serverPubKey;
+	}
+
+	public long getRandomNonce() {
+		return randomNonce;
+	}
+
+	public void setRandomNonce(long randomNonce) {
+		this.randomNonce = randomNonce;
+	}
+
+	public long getIV() {
+		return IV;
+	}
+
+	public void setIV(long iV) {
+		IV = iV;
+	}
+	
+	public byte[] getEncryptionKey() {
+		return encryptionKey;
+	}
+
+	public void setEncryptionKey(byte[] encryptionKey) {
+		this.encryptionKey = encryptionKey;
+	}
+
 	public long generateRandomNonce() {
 		
 		SecureRandom random = new SecureRandom();
 		return random.nextLong();
 	}
 	
-	public void uploadFileToServer(ServerSocket socket, DataOutputStream dos, String fileName) throws IOException {
+	public void uploadFileToServer(ServerSocket socket, DataOutputStream dos, File file) throws IOException, InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException {
 		// Client uploads to server
-		FileInputStream fis = new FileInputStream(fileName);
+		
+		this.setIV(generateRandomNonce());
+		FileClient.showMessage("At client, IV: "+this.getIV());
+		byte[] encryptedIV = this.encrypted(getIV(), this.getServerPubKey());
+		
+		dos.writeInt(encryptedIV.length);
+		dos.write(encryptedIV, 0 , encryptedIV.length);
+		FileInputStream fis = new FileInputStream(file.getAbsolutePath());
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		
 		
 		byte[] fileByte = new byte[64];
 		int bytesRead = 0;
-		while(bytesRead != -1) {
+		do{
 			bytesRead = bis.read(fileByte, 0, fileByte.length);
 			if(bytesRead > 0)
 			{
 				dos.write(fileByte,0,bytesRead);
 			}
-		}
+		}while(bytesRead != -1); 
+			
 		FileClient.showMessage("\nFile has been uploaded succesfully to the server!\n");
 		bis.close();
 		fis.close();
@@ -107,10 +151,9 @@ public class FileTransferProtocolClient {
 	}
 	
 	
-	public byte[] encrypted(PublicKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, IOException  {
+	public byte[] encrypted(long rand, PublicKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, IOException  {
 		//Encrypt the nonce
 				//String text = "This is the session key. It is encrypted using server's public key and will be decrypted by the server using its private key!";
-				long rand = generateRandomNonce();
 				Cipher ci = Cipher.getInstance("RSA");
 				ci.init(Cipher.ENCRYPT_MODE, key);
 				FileClient.showMessage("\nThe randomly generated nonce is: " + rand+"\n");
@@ -133,5 +176,18 @@ public class FileTransferProtocolClient {
 	    buffer.put(bytes);
 	    buffer.flip();//need flip 
 	    return buffer.getLong();
+	}
+	
+	public long getEncryptionNonce(long sessionKey) {
+		if(sessionKey > 0) {
+			return sessionKey - 1;
+		}
+		return sessionKey + 1;
+	}
+	public long getIntegrityNonce(long sessionKey) {
+		if(sessionKey > 0) {
+			return sessionKey - 2;
+		}
+		return sessionKey + 2;
 	}
 }
