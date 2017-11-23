@@ -183,12 +183,10 @@ public class FileClient extends JFrame {
 		protocol.setServerPubKey(pk);
 		long randomNonce = protocol.generateRandomNonce();
 		protocol.setRandomNonce(randomNonce);
-		System.out.println("IV at client: "+randomNonce);
 		byte[] encryptedNonce = protocol.encrypted(randomNonce,pk);
 		dos.writeInt(encryptedNonce.length);
 		dos.write(encryptedNonce, 0, encryptedNonce.length);
 		long encryptionNonce = protocol.getEncryptionNonce(randomNonce);
-		System.out.println("Encryption nonce at client: "+encryptionNonce);
 		byte[] encryptionKey = protocol.longToBytes(encryptionNonce);
 		protocol.setEncryptionKey(encryptionKey);
 	}

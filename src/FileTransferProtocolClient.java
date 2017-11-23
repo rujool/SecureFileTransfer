@@ -77,42 +77,40 @@ public class FileTransferProtocolClient {
 		
 		this.setIV(generateRandomNonce());
 		FileClient.showMessage("At client, IV: "+this.getIV());
-		byte[] encryptedIV = this.encrypted(getIV(), this.getServerPubKey());
+		byte[] encryptedIV = this.encrypted(this.getIV(), this.getServerPubKey());
 		
 		dos.writeInt(encryptedIV.length);
 		dos.write(encryptedIV, 0 , encryptedIV.length);
 		FileInputStream fis = new FileInputStream(file.getAbsolutePath());
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		byte[] encryptionKey = this.getEncryptionKey();
-		System.out.println("Encryption key at client: "+new String(encryptionKey));
 		byte[] IVdataBlock = new byte[encryptedIV.length + encryptionKey.length];
 		System.arraycopy(encryptedIV, 0, IVdataBlock, 0, encryptedIV.length);
 		System.arraycopy(encryptionKey, 0, IVdataBlock, encryptedIV.length, encryptionKey.length);
-		System.out.println("Concatenated IV data block at client: "+ new String(IVdataBlock));
 		MessageDigest md = MessageDigest.getInstance("SHA1");
 		byte[] sha1Hash = md.digest(IVdataBlock);
-		byte[] fileByte = new byte[64];
-		bis.read(fileByte, 0 , fileByte.length);
-		System.out.println("Plaintext byte at client = "+new String(fileByte));
+		byte[] fileByte = new byte[20];
+		int bytesRead = bis.read(fileByte, 0 , fileByte.length);
 		byte[] xored = xor(fileByte, sha1Hash);
 		dos.writeInt(xored.length);
 		dos.write(xored, 0, xored.length);
-//		
-//		
-//		int bytesRead = 0;
-//		do{
-//			bytesRead = bis.read(fileByte, 0, fileByte.length);
-//			if(bytesRead > 0)
-//			{
-//				dos.write(fileByte,0,bytesRead);
-//			}
-//		}while(bytesRead != -1); 
+		
+		while(bytesRead != -1) {
+			bytesRead = bis.read(fileByte, 0, bytesRead);
+			if(bytesRead > 0) {
+				byte[] hashedBlock = new byte[xored.length + encryptionKey.length];
+				System.arraycopy(xored, 0, hashedBlock, 0, xored.length);
+				System.arraycopy(encryptionKey, 0, hashedBlock, xored.length, encryptionKey.length);
+				byte[] hashValue = md.digest(hashedBlock);
+				byte[] cipherText = xor(fileByte, hashValue);
+				dos.writeInt(bytesRead);
+				dos.write(cipherText, 0 , bytesRead);
+			}
+		}
 			
-		FileClient.showMessage("\nFile has been uploaded succesfully to the server!\n");
+		FileClient.showMessage("\nFile has been uploaded successfully to the server!\n");
 		bis.close();
 		fis.close();
-		dos.flush();
-		//dos.close();
 	}
 	
 	public void downloadFileFromServer(Socket socket, DataInputStream dis, String fileName) throws IOException {
@@ -207,14 +205,15 @@ public class FileTransferProtocolClient {
 	
 	 public static byte[] xor(byte[] data1, byte[] data2) {
 	        // make data2 the largest...
-	        if (data1.length > data2.length) {
-	            byte[] tmp = data2;
-	            data2 = data1;
-	            data1 = tmp;
+		 byte[] data1Local = data1.clone(), data2Local = data2.clone();
+	        if (data1Local.length > data2Local.length) {
+	            byte[] tmp = data2Local;
+	            data2Local = data1Local;
+	            data1Local = tmp;
 	        }
-	        for (int i = 0; i < data1.length; i++) {
-	            data2[i] ^= data1[i];
+	        for (int i = 0; i < data1Local.length; i++) {
+	            data2Local[i] ^= data1Local[i];
 	        }
-	        return data2;
+	        return data2Local;
 	    }
 }
