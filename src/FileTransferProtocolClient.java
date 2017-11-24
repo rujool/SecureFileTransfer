@@ -29,7 +29,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class FileTransferProtocolClient {
-	private static DataOutputStream dos;
 	private PublicKey serverPubKey;
 	private long randomNonce, IV;
 	private byte[] encryptionKey, integrityKey;
@@ -113,21 +112,48 @@ public class FileTransferProtocolClient {
 		fis.close();
 	}
 	
-	public void downloadFileFromServer(Socket socket, DataInputStream dis, String fileName) throws IOException {
-		// Client downloads file from server
+	public void downloadFileFromServer(Socket socket, DataInputStream dis, DataOutputStream dos, String fileName) throws IOException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException {
+
+		byte[] encryptedRandomNonce = this.encrypted(this.getRandomNonce(), this.getServerPubKey());
+		dos.writeInt(encryptedRandomNonce.length);
+		dos.write(encryptedRandomNonce, 0, encryptedRandomNonce.length);
+		this.setIV(generateRandomNonce());
+		long encryptionNonce = this.getEncryptionNonce(this.getRandomNonce());
+		this.setEncryptionKey(longToBytes(encryptionNonce));
+		System.out.println("At client, encryption key: "+new String(this.getEncryptionKey()));
+		byte[] encryptedIV = this.encrypted(this.getIV(), this.getServerPubKey());
+		dos.writeInt(encryptedIV.length);
+		dos.write(encryptedIV, 0, encryptedIV.length);
 		FileOutputStream fos = new FileOutputStream(fileName);
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
-		byte[] fileByte = new byte[64];
-		int bytesRead = 0;
-		while(bytesRead != -1) {
-			bytesRead = dis.read(fileByte,0,fileByte.length);
-			if(bytesRead > 0) {
-				bos.write(fileByte,0,bytesRead);
+		int encryptedDataLength = dis.readInt();
+		if(encryptedDataLength > 0) {
+			byte[] encryptedBlock = new byte[encryptedDataLength];
+			dis.read(encryptedBlock, 0, encryptedDataLength);
+			MessageDigest md = MessageDigest.getInstance("SHA1");
+			byte[] concatEncrypted = new byte[encryptionKey.length + encryptedIV.length];
+			System.arraycopy(encryptedIV, 0, concatEncrypted, 0, encryptedIV.length);
+			System.arraycopy(encryptionKey, 0, concatEncrypted, encryptedIV.length, encryptionKey.length);
+			byte[] sha1HashConcat = md.digest(concatEncrypted);
+			byte[] plainText = xor(encryptedBlock, sha1HashConcat);
+			System.out.println("At client, plaintext: "+new String(plainText));
+			bos.write(plainText);
+			bos.flush();
+			
+			while((encryptedDataLength = dis.readInt()) > 0) {
+				byte[] cipherText = new byte[encryptedDataLength];
+				dis.read(cipherText, 0, encryptedDataLength);
+				concatEncrypted = new byte[encryptedBlock.length + encryptionKey.length];
+				System.arraycopy(encryptedBlock, 0, concatEncrypted, 0, encryptedBlock.length);
+				System.arraycopy(encryptionKey, 0, concatEncrypted, encryptedBlock.length, encryptionKey.length);
+				sha1HashConcat = md.digest(concatEncrypted);
+				plainText = xor(cipherText, sha1HashConcat);
+				bos.write(plainText, 0, encryptedDataLength);
+				bos.flush();
 			}
+			bos.close();
+			fos.close();
 		}
-		FileClient.showMessage("\nFile has been downloaded succesfully from the server!\n");
-		bos.close();
-		fos.close();
 	}
 	
 	public X509Certificate serverVerified(String filename) throws Exception{

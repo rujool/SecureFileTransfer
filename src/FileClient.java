@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
@@ -28,6 +29,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -47,6 +49,7 @@ public class FileClient extends JFrame {
 	//private JTextField userText;
 	private static JButton Upload;
 	private static JButton Download;
+	private static JButton SelectFile;
 	private static JTextArea Window;
 	private static JPanel Panel;
 	//private ObjectOutputStream output;
@@ -70,7 +73,8 @@ public class FileClient extends JFrame {
 		setTitle("CLIENT - FTP");
 		ServerIP = host;
 		//userText = new JTextField();							
-		Window = new JTextArea();													
+		Window = new JTextArea();		
+		SelectFile = new JButton("Select File");
 		Upload = new JButton("Upload");						
 		Download = new JButton("Download");
 		Panel = new JPanel();									// The main panel that consists of all of the above
@@ -83,14 +87,19 @@ public class FileClient extends JFrame {
 		Panel.add(scrollPane);									//adding scrollPane to the panel
 		//userText.setBounds(10, 420, 280, 30);					// setting bounds for the input text area
 		//Panel.add(userText);									// adding input area to the panel
-		Upload.setBounds(175, 420, 100, 30);						// setting bounds for the button
+		Upload.setBounds(100, 420, 100, 30);						// setting bounds for the button
 		Panel.add(Upload);										// adding button to the panel
-		Download.setBounds(300, 420, 100, 30);						// setting bounds for the button
-		Panel.add(Download);										// adding button to the panel
+		Download.setBounds(250, 420, 150, 30);						// setting bounds for the button
+		Panel.add(Download);				
+		Panel.add(SelectFile);
+		SelectFile.setBounds(450, 420, 100, 30);
+		SelectFile.setVisible(false);
+		// adding button to the panel
 		Window.setBackground(Color.LIGHT_GRAY);
 		Window.setForeground(Color.BLUE );
 		Window.setBorder(BorderFactory.createLineBorder(Color.black));
-		Window.setEditable(false);							
+		Window.setEditable(false);			
+		Window.setLineWrap(true);
 		Upload.addActionListener(
 				new ActionListener(){
 					public void actionPerformed(ActionEvent e){
@@ -137,25 +146,53 @@ public class FileClient extends JFrame {
 					public void actionPerformed(ActionEvent e){
 						//Handle button action.
 						if (e.getSource() == Download) {
-							int returnVal = fc.showOpenDialog(Window);
-							if (returnVal == JFileChooser.APPROVE_OPTION) {
-								File file = fc.getSelectedFile();
-								//selected file name
-								downloadFileName = file.getName();
-								System.out.println(downloadFileName);
 								try {
-									protocol.downloadFileFromServer(clientSocket, dis, downloadFileName);
-								} catch (IOException ioe){
-									ioe.getStackTrace();
-								} 
+									dos.writeUTF("List Server Files");
+									String fileList = dis.readUTF();
+									showMessage("Files available at server: "+fileList);
+									Upload.setEnabled(false);
+									Download.setEnabled(false);
+									SelectFile.setVisible(true);
+									
+								} catch (IOException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
 							} else {
 								System.out.println("No file selected by user." + "\n");
 							}
 						}
-					}
+//					}
 				}
 				);
+		SelectFile.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				//Handle button action.
+				if (e.getSource() == SelectFile) {
+					try {
+						String s = (String) JOptionPane.showInputDialog("Select the file to download");
+						if(s != null) {
+							//selected file name
+							downloadFileName = s;
+							dos.writeUTF(downloadFileName);
+							try {
+								protocol.downloadFileFromServer(clientSocket, dis, dos, downloadFileName);
+							} catch (IOException ioe){
+								ioe.getStackTrace();
+							} 
+						}
+						Upload.setEnabled(true);
+						Download.setEnabled(true);
+						SelectFile.setVisible(false);
+					}
+					catch (Exception e1) {
+						// TODO: handle exception
+					}
+				}
+			}
+		});
 	}
+	
 
 	//start
 	public void  startRunning() throws Exception{
@@ -183,9 +220,8 @@ public class FileClient extends JFrame {
 		protocol.setServerPubKey(pk);
 		long randomNonce = protocol.generateRandomNonce();
 		protocol.setRandomNonce(randomNonce);
-		byte[] encryptedNonce = protocol.encrypted(randomNonce,pk);
-		dos.writeInt(encryptedNonce.length);
-		dos.write(encryptedNonce, 0, encryptedNonce.length);
+//		dos.writeInt(encryptedNonce.length);
+//		dos.write(encryptedNonce, 0, encryptedNonce.length);
 		long encryptionNonce = protocol.getEncryptionNonce(randomNonce);
 		byte[] encryptionKey = protocol.longToBytes(encryptionNonce);
 		protocol.setEncryptionKey(encryptionKey);

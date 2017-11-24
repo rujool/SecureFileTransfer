@@ -7,8 +7,8 @@ public class FileClientMain {
 	public static void main(String[] args){
 		FileClient client = new FileClient(HOSTNAME);										//Create new client class instance
 		try {
-		client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);				//Exit the window on closing connection
-		client.startRunning();												//Invoke the function to set up everything
+			client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);				//Exit the window on closing connection
+			client.startRunning();												//Invoke the function to set up everything
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
