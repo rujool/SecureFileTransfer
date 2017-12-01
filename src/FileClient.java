@@ -54,7 +54,6 @@ public class FileClient extends JFrame {
 	private static JPanel Panel;
 	//private ObjectOutputStream output;
 	//private ObjectInputStream input;
-	private static ServerSocket socket;
 	private static Socket clientSocket;
 	private static InputStream is;
 	private static OutputStream os;
@@ -113,8 +112,9 @@ public class FileClient extends JFrame {
 								//System.out.println(uploadFileName);
 								try {
 									//send file name to server
+									dos.writeUTF("upload");
 									dos.writeUTF(uploadFileName);
-									protocol.uploadFileToServer(socket, dos, file);
+									protocol.uploadFileToServer(clientSocket, dos, file);
 									
 								} catch (IOException ioe){
 									ioe.getStackTrace();
@@ -220,8 +220,9 @@ public class FileClient extends JFrame {
 		protocol.setServerPubKey(pk);
 		long randomNonce = protocol.generateRandomNonce();
 		protocol.setRandomNonce(randomNonce);
-//		dos.writeInt(encryptedNonce.length);
-//		dos.write(encryptedNonce, 0, encryptedNonce.length);
+		byte[] encryptedNonce = protocol.encrypted(protocol.getRandomNonce(), pk);
+		dos.writeInt(encryptedNonce.length);
+		dos.write(encryptedNonce, 0, encryptedNonce.length);
 		long encryptionNonce = protocol.getEncryptionNonce(randomNonce);
 		byte[] encryptionKey = protocol.longToBytes(encryptionNonce);
 		protocol.setEncryptionKey(encryptionKey);
