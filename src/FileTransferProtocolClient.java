@@ -248,8 +248,10 @@ public class FileTransferProtocolClient {
 						bos.close();
 						fos.close();
 						file.delete();
+						break;
 					}
 					else{
+						this.setSequenceNumber(seqNoLong);
 						plainTextWithoutSeqNo = Arrays.copyOfRange(plainText, 8, plainText.length);
 						System.out.println("Plaintext at server: "+new String(plainTextWithoutSeqNo));
 						bos.write(plainTextWithoutSeqNo, 0, plainTextWithoutSeqNo.length);
