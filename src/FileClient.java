@@ -112,6 +112,7 @@ public class FileClient extends JFrame {
 								//System.out.println(uploadFileName);
 								try {
 									//send file name to server
+									dos.flush();
 									dos.writeUTF("upload");
 									dos.writeUTF(uploadFileName);
 									protocol.uploadFileToServer(clientSocket, dos, file);
