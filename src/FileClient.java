@@ -109,13 +109,12 @@ public class FileClient extends JFrame {
 								File file = fc.getSelectedFile();
 								//selected file name
 								uploadFileName = file.getName();
-								//System.out.println(uploadFileName);
 								try {
 									//send file name to server
 									dos.flush();
 									dos.writeUTF("upload");
 									dos.writeUTF(uploadFileName);
-									protocol.uploadFileToServer(clientSocket, dos, file);
+									protocol.uploadFileToServer(clientSocket, dis, dos, file);
 									
 								} catch (IOException ioe){
 									ioe.getStackTrace();
@@ -150,7 +149,7 @@ public class FileClient extends JFrame {
 								try {
 									dos.writeUTF("List Server Files");
 									String fileList = dis.readUTF();
-									showMessage("Files available at server: "+fileList);
+									showMessage("\nFiles available at server: "+fileList);
 									Upload.setEnabled(false);
 									Download.setEnabled(false);
 									SelectFile.setVisible(true);
@@ -160,7 +159,7 @@ public class FileClient extends JFrame {
 									e1.printStackTrace();
 								}
 							} else {
-								System.out.println("No file selected by user." + "\n");
+								showMessage("\nNo file selected by user." + "\n");
 							}
 						}
 //					}
@@ -174,13 +173,20 @@ public class FileClient extends JFrame {
 						String s = (String) JOptionPane.showInputDialog("Select the file to download");
 						if(s != null) {
 							//selected file name
+							showMessage("\nDownloading file from server...");
 							downloadFileName = s;
+							dos.writeBoolean(true);
 							dos.writeUTF(downloadFileName);
+							
 							try {
 								protocol.downloadFileFromServer(clientSocket, dis, dos, downloadFileName);
+								showMessage("\n File downloaded successfully");
 							} catch (IOException ioe){
 								ioe.getStackTrace();
-							} 
+							}
+						}
+						else {
+							dos.writeBoolean(false);
 						}
 						Upload.setEnabled(true);
 						Download.setEnabled(true);
@@ -215,6 +221,7 @@ public class FileClient extends JFrame {
 
 	private void whileConnected(DataOutputStream dos) throws IOException, Exception {
 
+		protocol.downloadServerCertificate(clientSocket);
 		X509Certificate certificate = verifyCertificate();
 		//showMessage("hellooo");
 		PublicKey pk = getPublic(certificate);
@@ -227,6 +234,9 @@ public class FileClient extends JFrame {
 		long encryptionNonce = protocol.getEncryptionNonce(randomNonce);
 		byte[] encryptionKey = protocol.longToBytes(encryptionNonce);
 		protocol.setEncryptionKey(encryptionKey);
+		long integrityNonce = protocol.getIntegrityNonce(randomNonce);
+		byte[] integrityKey = protocol.longToBytes(integrityNonce);
+		protocol.setIntegrityKey(integrityKey);
 	}
 
 	//connect to server
@@ -259,7 +269,7 @@ public class FileClient extends JFrame {
 		dis = new DataInputStream(is);
 		//fos = new FileOutputStream(clientDownloadFile);
 		bos = new BufferedOutputStream(fos);
-		showMessage("\n Stream are setup! \n");
+		showMessage("\n Streams are setup! \n");
 		showMessage("\n ---------------------------------------"
 				+ "--------------------------------------------\n");
 	}
@@ -280,7 +290,7 @@ public class FileClient extends JFrame {
 
 		//Verify CA Certificate
 		X509Certificate c = protocol.serverVerified(SERVER_CERT_PATH);
-		showMessage("Server verified succesfully!\n");
+		showMessage("Server verified successfully!\n");
 		showMessage("Use the buttons below to,\n");
 		showMessage("- Upload file to the server!\n");
 		showMessage("- Download file from the server!\n");
